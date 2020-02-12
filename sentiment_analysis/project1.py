@@ -37,7 +37,9 @@ def hinge_loss_single(feature_vector, label, theta, theta_0):
     given data point and parameters.
     """
     # Your code here
-    raise NotImplementedError
+    classified_error = label * (feature_vector.transpose().dot(theta) + theta_0)
+    loss = 0 if classified_error >= 1 else (1 - classified_error)
+    return loss
 #pragma: coderesponse end
 
 
@@ -60,8 +62,12 @@ def hinge_loss_full(feature_matrix, labels, theta, theta_0):
     given dataset and parameters. This number should be the average hinge
     loss across all of the points in the feature matrix.
     """
-    # Your code here
-    raise NotImplementedError
+
+    # Row vector to column vector
+    theta = np.expand_dims(theta, axis=1)
+    classified_error = labels * (feature_matrix.dot(theta) + theta_0).flatten()
+    avg_hinge_loss = np.mean([0 if x >= 1 else (1-x) for x in classified_error])
+    return avg_hinge_loss
 #pragma: coderesponse end
 
 
@@ -89,7 +95,10 @@ def perceptron_single_step_update(
     completed.
     """
     # Your code here
-    raise NotImplementedError
+    next_theta = current_theta + label*feature_vector
+    next_theta_0 = current_theta_0 + label
+    return next_theta, next_theta_0
+
 #pragma: coderesponse end
 
 
@@ -120,11 +129,16 @@ def perceptron(feature_matrix, labels, T):
     the feature matrix.
     """
     # Your code here
+    # Initialize theta to be 0
+    theta = np.array([0]*feature_matrix.shape[1])
+    theta_0 = 0
     for t in range(T):
         for i in get_order(feature_matrix.shape[0]):
-            # Your code here
-            pass
-    raise NotImplementedError
+            if labels[i]*theta.dot(feature_matrix[i] + theta_0) <= 0:
+                theta, theta_0 = perceptron_single_step_update(feature_matrix[i], labels[i],
+                                                               theta, theta_0)
+
+    return theta, theta_0
 #pragma: coderesponse end
 
 
@@ -159,7 +173,21 @@ def average_perceptron(feature_matrix, labels, T):
     find a sum and divide.
     """
     # Your code here
-    raise NotImplementedError
+    # Your code here
+    # Initialize theta to be 0
+    theta = np.array([0]*feature_matrix.shape[1])
+    theta_0 = 0
+    theta_sum = theta
+    theta_0_sum = theta_0
+    for t in range(T):
+        for i in get_order(feature_matrix.shape[0]):
+            if labels[i]*theta.dot(feature_matrix[i] + theta_0) <= 0:
+                theta, theta_0 = perceptron_single_step_update(feature_matrix[i], labels[i],
+                                                               theta, theta_0)
+                theta_sum = theta_sum + theta
+                theta_0_sum = theta_0_sum + theta_0
+    scaler = T*feature_matrix.shape[0]
+    return theta_sum / scaler, theta_0 / scaler
 #pragma: coderesponse end
 
 
