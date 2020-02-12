@@ -95,8 +95,11 @@ def perceptron_single_step_update(
     completed.
     """
     # Your code here
-    next_theta = current_theta + label*feature_vector
-    next_theta_0 = current_theta_0 + label
+    next_theta = current_theta
+    next_theta_0 = current_theta_0
+    if label * (current_theta.dot(feature_vector) + current_theta_0) <= 0:
+        next_theta = current_theta + label*feature_vector
+        next_theta_0 = current_theta_0 + label
     return next_theta, next_theta_0
 
 #pragma: coderesponse end
@@ -134,9 +137,8 @@ def perceptron(feature_matrix, labels, T):
     theta_0 = 0
     for t in range(T):
         for i in get_order(feature_matrix.shape[0]):
-            if labels[i]*theta.dot(feature_matrix[i] + theta_0) <= 0:
-                theta, theta_0 = perceptron_single_step_update(feature_matrix[i], labels[i],
-                                                               theta, theta_0)
+            theta, theta_0 = perceptron_single_step_update(feature_matrix[i], labels[i],
+                                                           theta, theta_0)
 
     return theta, theta_0
 #pragma: coderesponse end
@@ -172,8 +174,6 @@ def average_perceptron(feature_matrix, labels, T):
     Hint: It is difficult to keep a running average; however, it is simple to
     find a sum and divide.
     """
-    # Your code here
-    # Your code here
     # Initialize theta to be 0
     theta = np.array([0]*feature_matrix.shape[1])
     theta_0 = 0
@@ -181,13 +181,12 @@ def average_perceptron(feature_matrix, labels, T):
     theta_0_sum = theta_0
     for t in range(T):
         for i in get_order(feature_matrix.shape[0]):
-            if labels[i]*theta.dot(feature_matrix[i] + theta_0) <= 0:
-                theta, theta_0 = perceptron_single_step_update(feature_matrix[i], labels[i],
-                                                               theta, theta_0)
-                theta_sum = theta_sum + theta
-                theta_0_sum = theta_0_sum + theta_0
+            theta, theta_0 = perceptron_single_step_update(feature_matrix[i], labels[i],
+                                                           theta, theta_0)
+            theta_sum = theta_sum + theta
+            theta_0_sum = theta_0_sum + theta_0
     scaler = T*feature_matrix.shape[0]
-    return theta_sum / scaler, theta_0 / scaler
+    return theta_sum / scaler, theta_0_sum / scaler
 #pragma: coderesponse end
 
 
