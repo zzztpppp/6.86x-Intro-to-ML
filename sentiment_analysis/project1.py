@@ -1,6 +1,7 @@
 from string import punctuation, digits
 import numpy as np
 import random
+import utils
 
 # Part I
 
@@ -139,7 +140,7 @@ def perceptron(feature_matrix, labels, T):
         for i in get_order(feature_matrix.shape[0]):
             theta, theta_0 = perceptron_single_step_update(feature_matrix[i], labels[i],
                                                            theta, theta_0)
-
+            # print(theta, theta_0)  # Check weather the algorithm actually converges
     return theta, theta_0
 #pragma: coderesponse end
 
@@ -179,12 +180,15 @@ def average_perceptron(feature_matrix, labels, T):
     theta_0 = 0
     theta_sum = theta
     theta_0_sum = theta_0
+    count = 0
     for t in range(T):
         for i in get_order(feature_matrix.shape[0]):
+            count += 1
             theta, theta_0 = perceptron_single_step_update(feature_matrix[i], labels[i],
                                                            theta, theta_0)
             theta_sum = theta_sum + theta
             theta_0_sum = theta_0_sum + theta_0
+            # print(theta_sum / count, theta_0_sum / count)  # Check weather the algorithm actually converges
     scaler = T*feature_matrix.shape[0]
     return theta_sum / scaler, theta_0_sum / scaler
 #pragma: coderesponse end
@@ -270,6 +274,7 @@ def pegasos(feature_matrix, labels, T, L):
             eta = 1/np.sqrt(count)
             theta, theta_0 = pegasos_single_step_update(feature_matrix[j], labels[j],
                                                        L, eta, theta, theta_0)
+            # print(theta, theta_0)  # Check weather the algorithm actually converges
     return theta, theta_0
 #pragma: coderesponse end
 
@@ -295,8 +300,11 @@ def classify(feature_matrix, theta, theta_0):
     given theta and theta_0. If a prediction is GREATER THAN zero, it should
     be considered a positive classification.
     """
-    # Your code here
-    raise NotImplementedError
+    theta = np.expand_dims(theta, axis=1)  # To perform matrix dot product
+    score = feature_matrix.dot(theta) + theta_0
+    raw_sign = np.sign(score).flatten()
+    raw_sign[raw_sign == 0] = -1
+    return raw_sign
 #pragma: coderesponse end
 
 
@@ -334,7 +342,18 @@ def classifier_accuracy(
     accuracy of the trained classifier on the validation data.
     """
     # Your code here
-    raise NotImplementedError
+    all_predictions = []
+    # Train a model
+    theta, theta_0 = classifier(train_feature_matrix, train_labels, **kwargs)
+    for features, labels in zip([train_feature_matrix, val_feature_matrix],
+                                [train_labels, val_labels]):
+
+        all_predictions.append(classify(features, theta, theta_0))
+
+    # Compute accuracies and return in a tuple
+    preds_labels = zip(all_predictions, [train_labels, val_labels])
+    acc = tuple([accuracy(*x) for x in preds_labels])
+    return acc
 #pragma: coderesponse end
 
 
@@ -362,11 +381,12 @@ def bag_of_words(texts):
     Feel free to change this code as guided by Problem 9
     """
     # Your code here
+    stop_words = utils.read_stopwords("stopwords.txt")
     dictionary = {} # maps word to unique index
     for text in texts:
         word_list = extract_words(text)
         for word in word_list:
-            if word not in dictionary:
+            if word not in dictionary and word not in stop_words:
                 dictionary[word] = len(dictionary)
     return dictionary
 #pragma: coderesponse end

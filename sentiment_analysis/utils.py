@@ -165,3 +165,9 @@ def tune_pegasos_L(best_T, *args):
 def most_explanatory_word(theta, wordlist):
     """Returns the word associated with the bag-of-words feature having largest weight."""
     return [word for (theta_i, word) in sorted(zip(theta, wordlist))[::-1]]
+
+def read_stopwords(path):
+    f = open(path)
+    words = [w.strip() for w in f.readlines()]
+    f.close()
+    return words
