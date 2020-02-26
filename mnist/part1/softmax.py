@@ -32,11 +32,11 @@ def compute_probabilities(X, theta, temp_parameter):
         H - (k, n) NumPy array, where each entry H[j][i] is the probability that X[i] is labeled as j
     """
     temperature_matrix = X.dot(theta.transpose())/temp_parameter
-    c = np.max(temperature_matrix, axis=0)
-    temperature_matrix = np.exp(temperature_matrix - c)
-    temperature_column_sum = np.sum(temperature_matrix, axis=0)
+    c = np.max(temperature_matrix, axis=1)
+    temperature_matrix = np.exp(temperature_matrix - c[:, None])  # Add new axis to the vector
+    temperature_column_sum = np.sum(temperature_matrix, axis=1)
 
-    return temperature_matrix/temperature_column_sum
+    return (temperature_matrix/temperature_column_sum[:, None]).transpose()
 
 
 def compute_cost_function(X, Y, theta, lambda_factor, temp_parameter):
@@ -55,8 +55,17 @@ def compute_cost_function(X, Y, theta, lambda_factor, temp_parameter):
     Returns
         c - the cost value (scalar)
     """
-    #YOUR CODE HERE
-    raise NotImplementedError
+
+    probabilities_log = np.log(compute_probabilities(X, theta, temp_parameter))
+
+    # Select probabilities of corresponding category
+    all_category = [x for x in range(theta.shape[0])]
+    selection_matrix = np.array([all_category == y for y in Y]).transpose()
+    cost = np.mean(probabilities_log[selection_matrix])
+
+    cost = lambda_factor/2 * np.sum(np.power(theta, 2)) - cost
+    return cost
+
 
 def run_gradient_descent_iteration(X, Y, theta, alpha, lambda_factor, temp_parameter):
     """
