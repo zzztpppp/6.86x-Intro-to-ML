@@ -85,7 +85,18 @@ def run_gradient_descent_iteration(X, Y, theta, alpha, lambda_factor, temp_param
         theta - (k, d) NumPy array that is the final value of parameters theta
     """
     #YOUR CODE HERE
-    raise NotImplementedError
+    probabilities = compute_probabilities(X, theta, temp_parameter)
+    all_category = [x for x in range(theta.shape[0])]
+
+    # Indicator that points to the probabilities of true labels of each data points.
+    indicator_matrix = np.array([all_category == y for y in Y]).transpose()
+    gradient = lambda_factor * theta - (
+            (indicator_matrix - probabilities).dot(X)/(temp_parameter * X.shape[0])
+    )
+
+    theta_update = theta - alpha * gradient
+    return theta_update
+
 
 def update_y(train_y, test_y):
     """
@@ -105,7 +116,11 @@ def update_y(train_y, test_y):
                     for each datapoint in the test set
     """
     #YOUR CODE HERE
-    raise NotImplementedError
+    train_y_mod_3 = train_y % 3
+    test_y_mod_3 = test_y % 3
+
+    return train_y_mod_3, test_y_mod_3
+
 
 def compute_test_error_mod3(X, Y, theta, temp_parameter):
     """
@@ -122,8 +137,10 @@ def compute_test_error_mod3(X, Y, theta, temp_parameter):
     Returns:
         test_error - the error rate of the classifier (scalar)
     """
-    #YOUR CODE HERE
-    raise NotImplementedError
+    Y_hat = get_classification(X, theta, temp_parameter) % 3
+
+    return np.mean(Y != Y_hat)
+
 
 def softmax_regression(X, Y, temp_parameter, alpha, lambda_factor, k, num_iterations):
     """
