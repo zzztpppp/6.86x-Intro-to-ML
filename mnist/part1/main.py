@@ -181,7 +181,7 @@ def run_softmax_on_MNIST_pca(temp_parameter):
 
     return test_error
 
-print("softmax pca test error:", run_softmax_on_MNIST_pca(1))
+# print("softmax pca test error:", run_softmax_on_MNIST_pca(1))
 
 
 # TODO: Use the plot_PC function in features.py to produce scatterplot
@@ -205,7 +205,8 @@ plot_images(train_x[1, ])
 
 ## Cubic Kernel ##
 # TODO: Find the 10-dimensional PCA representation of the training and test set
-
+train_pca10 = project_onto_PC(train_x, pcs, 10)
+test_pca10 = project_onto_PC(test_x, pcs, 10)
 
 # TODO: First fill out cubicFeatures() function in features.py as the below code requires it.
 
@@ -217,3 +218,16 @@ test_cube = cubic_features(test_pca10)
 
 # TODO: Train your softmax regression model using (train_cube, train_y)
 #       and evaluate its accuracy on (test_cube, test_y).
+
+def run_softmax_on_MNIST_cubic_pca(temp_parameter):
+    theta, cost_function_history = softmax_regression(train_cube, train_y, temp_parameter, alpha=0.3,
+                                                      lambda_factor=1.0e-4,
+                                                      k=10, num_iterations=150)
+    plot_cost_function_over_time(cost_function_history)
+    test_error = compute_test_error(test_cube, test_y, theta, temp_parameter)
+    # Save the model parameters theta obtained from calling softmax_regression to disk.
+    write_pickle_data(theta, "./theta.pkl.gz")
+
+    return test_error
+
+print("Run cubic pca test error:", run_softmax_on_MNIST_cubic_pca(1))
