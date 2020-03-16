@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def project_onto_PC(X, pcs, n_components, feature_means):
+def project_onto_PC(X, pcs, n_components):
     """
     Given principal component vectors pcs = principal_components(X)
     this function returns a new data array in which each sample in X
@@ -16,7 +16,9 @@ def project_onto_PC(X, pcs, n_components, feature_means):
     #       of the eigenvectors returned by principal_components().
     #       Note that each eigenvector is already be a unit-vector,
     #       so the projection may be done using matrix multiplication.
-    raise NotImplementedError
+    x_tuder = center_data(X)
+    nlargest_pcs = pcs[:, :n_components]
+    return x_tuder.dot(nlargest_pcs)
 
 
 ### Functions which are already complete, for you to use ###
@@ -95,7 +97,7 @@ def center_data(X):
 
     """
     feature_means = X.mean(axis=0)
-    return (X - feature_means), feature_means
+    return (X - feature_means)
 
 
 def principal_components(centered_data):
