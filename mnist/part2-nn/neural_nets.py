@@ -55,16 +55,16 @@ class NeuralNetwork():
         input_values = np.matrix([[x1],[x2]]) # 2 by 1
 
         # Calculate the input and activation of the hidden layer
-        hidden_layer_weighted_input = # TODO (3 by 1 matrix)
-        hidden_layer_activation = # TODO (3 by 1 matrix)
+        hidden_layer_weighted_input = self.input_to_hidden_weights.dot(input_values)
+        hidden_layer_activation = np.vectorize(rectified_linear_unit)(hidden_layer_weighted_input)
 
-        output =  # TODO
-        activated_output = # TODO
+        output =  self.hidden_to_output_weights.dot(hidden_layer_activation)
+        activated_output = np.vectorize(output_layer_activation)(output)
 
         ### Backpropagation ###
 
         # Compute gradients
-        output_layer_error = # TODO
+        output_layer_error = (y - activated_output).transpose().dot(y = activated_output)
         hidden_layer_error = # TODO (3 by 1 matrix)
 
         bias_gradients = # TODO
