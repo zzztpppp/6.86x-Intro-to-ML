@@ -20,7 +20,8 @@ def polynomial_kernel(X, Y, c, p):
             kernel_matrix - (n, m) Numpy array containing the kernel matrix
     """
     # YOUR CODE HERE
-    raise NotImplementedError
+    kernal = np.power(X.dot(Y.transpose()) + c, p)
+    return kernal
 
 
 
@@ -39,4 +40,5 @@ def rbf_kernel(X, Y, gamma):
             kernel_matrix - (n, m) Numpy array containing the kernel matrix
     """
     # YOUR CODE HERE
-    raise NotImplementedError
+    from scipy.spatial.distance import cdist
+    return np.exp(-gamma * cdist(X, Y, metric="sqeuclidean"))
