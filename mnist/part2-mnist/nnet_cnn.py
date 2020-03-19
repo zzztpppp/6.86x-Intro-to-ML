@@ -46,6 +46,13 @@ def main():
               nn.Conv2d(1, 32, (3, 3)),
               nn.ReLU(),
               nn.MaxPool2d((2, 2)),
+              nn.Conv2d(32, 64, (3, 3)),   # 11 x 11
+              nn.ReLU(),
+              nn.MaxPool2d((2, 2)),   # 5 x 5
+              Flatten(),
+              nn.Linear(1600, 128),
+              nn.Dropout(0.5),
+              nn.Linear(128, 10)
             )
     ##################################
 

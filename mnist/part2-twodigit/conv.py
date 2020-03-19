@@ -13,6 +13,10 @@ nb_epoch = 30
 num_classes = 10
 img_rows, img_cols = 42, 28 # input image dimensions
 
+# Use cuda if available
+use_cuda = torch.cuda.is_available()
+device = torch.device('cuda:0' if use_cuda else 'cpu')
+
 
 
 class CNN(nn.Module):
@@ -20,27 +24,33 @@ class CNN(nn.Module):
     def __init__(self, input_dimension):
         super(CNN, self).__init__()
         # TODO initialize model layers here
-        self.conv1 = nn.Conv2d(1, 16, (3, 3))
+        self.conv1 = nn.Conv2d(1, 16, (5, 5))
         self.pool1 = nn.MaxPool2d((2, 2))
-        self.conv2 = nn.Conv2d(16, 32, (3, 3))
+        self.conv2 = nn.Conv2d(16, 32, (5, 3))
         self.pool2 = nn.MaxPool2d((2, 2))
+        self.conv3 = nn.Conv2d(32, 64, (3, 3))
+        self.pool3 = nn.MaxPool2d((2, 2))
+
         self.flatten = Flatten()
-        self.linear = nn.Linear(1440, 128)
-        self.drop_out = nn.Dropout(0.7)
+        self.linear = nn.Linear(128, 128)
+        self.drop_out = nn.Dropout(0.5)
         self.out1 = nn.Linear(128, 10)
         self.out2 = nn.Linear(128, 10)
     def forward(self, x):
-
+        x.cuda(device)
         x_conv1 = self.conv1(x)
-        x_relu1 = F.relu(x_conv1)
+        x_relu1 = F.leaky_relu(x_conv1)
         x_pooled1 = self.pool1(x_relu1)
         x_conv2 = self.conv2(x_pooled1)
-        x_relu2 = F.relu(x_conv2)
+        x_relu2 = F.leaky_relu(x_conv2)
         x_pooled2 = self.pool2(x_relu2)
-        x_f = self.flatten(x_pooled2)
+        x_conv3 = self.conv3(x_pooled2)
+        x_relu3 = F.leaky_relu(x_conv3)
+        x_pooled3 = self.pool3(x_relu3)
+        x_f = self.flatten(x_pooled3)
         x_l = self.linear(x_f)
-        x_l = F.dropout(x_l, p=0.7)
-        out_first_digit, out_second_digit = F.softmax(self.out1(x_l)), F.softmax(self.out2(x_l))
+        x_l_relu = self.drop_out(x_l)
+        out_first_digit, out_second_digit = F.softmax(self.out1(x_l_relu)), F.softmax(self.out2(x_l_relu))
 
         return out_first_digit, out_second_digit
 
@@ -66,7 +76,7 @@ def main():
 
     # Load model
     input_dimension = img_rows * img_cols
-    model = CNN(input_dimension) # TODO add proper layers to CNN class above
+    model = CNN(input_dimension).cuda(torch.device('cuda:0')) # TODO add proper layers to CNN class above
 
     # Train
     train_model(train_batches, dev_batches, model)

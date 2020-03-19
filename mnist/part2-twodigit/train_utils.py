@@ -7,6 +7,10 @@ import torch.nn.functional as F
 import torch.nn as nn
 
 
+# Use cuda if available
+use_cuda = torch.cuda.is_available()
+device = torch.device('cuda:0' if use_cuda else 'cpu')
+
 class Flatten(nn.Module):
     """A custom layer that views an input as 1D."""
     
@@ -39,7 +43,7 @@ def train_model(train_data, dev_data, model, lr=0.01, momentum=0.9, nesterov=Fal
     """Train a model for N epochs given data and hyper-params."""
     # We optimize with SGD
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, nesterov=nesterov)
-
+    # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     for epoch in range(1, n_epochs + 1):
         print("-------------\nEpoch {}:\n".format(epoch))
 
@@ -70,6 +74,8 @@ def run_epoch(data, model, optimizer):
     for batch in tqdm(data):
         # Grab x and y
         x, y = batch['x'], batch['y']
+        x = x.to(device)
+        y_g = y.to(device)
 
         # Get output predictions for both the upper and lower numbers
         out1, out2 = model(x)
@@ -77,12 +83,12 @@ def run_epoch(data, model, optimizer):
         # Predict and store accuracy
         predictions_first_label = torch.argmax(out1, dim=1)
         predictions_second_label = torch.argmax(out2, dim=1)
-        batch_accuracies_first.append(compute_accuracy(predictions_first_label, y[0]))
-        batch_accuracies_second.append(compute_accuracy(predictions_second_label, y[1]))
+        batch_accuracies_first.append(compute_accuracy(predictions_first_label.cpu(), y[0]))
+        batch_accuracies_second.append(compute_accuracy(predictions_second_label.cpu(), y[1]))
 
         # Compute both losses
-        loss1 = F.cross_entropy(out1, y[0])
-        loss2 = F.cross_entropy(out2, y[1])
+        loss1 = F.cross_entropy(out1, y_g[0])
+        loss2 = F.cross_entropy(out2, y_g[1])
         losses_first_label.append(loss1.data.item())
         losses_second_label.append(loss2.data.item())
 
