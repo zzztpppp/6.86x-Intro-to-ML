@@ -56,7 +56,7 @@ def main():
 
     # Load model
     input_dimension = img_rows * img_cols
-    model = MLP(input_dimension) # TODO add proper layers to MLP class above
+    model = MLP(input_dimension).cuda(torch.device('cuda:0')) # TODO add proper layers to MLP class above
 
     # Train
     train_model(train_batches, dev_batches, model)

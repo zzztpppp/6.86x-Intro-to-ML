@@ -9,7 +9,7 @@ use_mini_dataset = True
 
 batch_size = 64
 nb_classes = 10
-nb_epoch = 30
+nb_epoch = 40
 num_classes = 10
 img_rows, img_cols = 42, 28 # input image dimensions
 
@@ -32,10 +32,11 @@ class CNN(nn.Module):
         self.pool3 = nn.MaxPool2d((2, 2))
 
         self.flatten = Flatten()
-        self.linear = nn.Linear(128, 128)
-        self.drop_out = nn.Dropout(0.5)
+        self.linear = nn.Linear(1120, 256)
+        self.drop_out = nn.Dropout(0.4)
+        self.linear2 = nn.Linear(256, 128)
         self.out1 = nn.Linear(128, 10)
-        self.out2 = nn.Linear(128, 10)
+        self.out2 = nn.Linear(256, 10)
     def forward(self, x):
         x.cuda(device)
         x_conv1 = self.conv1(x)
@@ -44,13 +45,15 @@ class CNN(nn.Module):
         x_conv2 = self.conv2(x_pooled1)
         x_relu2 = F.leaky_relu(x_conv2)
         x_pooled2 = self.pool2(x_relu2)
-        x_conv3 = self.conv3(x_pooled2)
-        x_relu3 = F.leaky_relu(x_conv3)
-        x_pooled3 = self.pool3(x_relu3)
-        x_f = self.flatten(x_pooled3)
+        # x_conv3 = self.conv3(x_pooled2)
+        # x_relu3 = F.leaky_relu(x_conv3)
+        # x_pooled3 = self.pool3(x_relu3)
+        x_f = self.flatten(x_pooled2)
         x_l = self.linear(x_f)
         x_l_relu = self.drop_out(x_l)
-        out_first_digit, out_second_digit = F.softmax(self.out1(x_l_relu)), F.softmax(self.out2(x_l_relu))
+        x_l2 = self.linear2(x_l_relu)
+        x_l2_relu = F.leaky_relu(x_l2)
+        out_first_digit, out_second_digit = F.softmax(self.out1(x_l2_relu)), F.softmax(self.out2(x_l_relu))
 
         return out_first_digit, out_second_digit
 
@@ -79,7 +82,7 @@ def main():
     model = CNN(input_dimension).cuda(torch.device('cuda:0')) # TODO add proper layers to CNN class above
 
     # Train
-    train_model(train_batches, dev_batches, model)
+    train_model(train_batches, dev_batches, model,n_epochs=nb_epoch)
 
     ## Evaluate the model on test data
     loss, acc = run_epoch(test_batches, model.eval(), None)
