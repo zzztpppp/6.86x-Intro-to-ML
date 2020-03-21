@@ -9,7 +9,7 @@ use_mini_dataset = True
 
 batch_size = 128
 nb_classes = 10
-nb_epoch = 35
+nb_epoch = 25
 num_classes = 10
 img_rows, img_cols = 42, 28 # input image dimensions
 
@@ -24,19 +24,25 @@ class CNN(nn.Module):
     def __init__(self, input_dimension):
         super(CNN, self).__init__()
         # TODO initialize model layers here
-        self.conv1 = nn.Conv2d(1, 16, (5, 5))
+        self.conv1 = nn.Conv2d(1, 128, (5, 5))
         self.pool1 = nn.MaxPool2d((2, 2))
-        self.conv2_1 = nn.Conv2d(16, 32, (3, 3))
+
+        self.conv2_1 = nn.Conv2d(128, 64, (3, 3))
         self.pool2_1 = nn.MaxPool2d((2, 2))
-        self.conv2_2 = nn.Conv2d(16, 32, (3, 3))
+        self.conv2_2 = nn.Conv2d(128, 64, (3, 3))
         self.pool2_2 = nn.MaxPool2d((2, 2))
+        self.conv3_1 = nn.Conv2d(32, 16, (3, 3))
+        self.pool3_1 = nn.MaxPool2d((2, 2))
+        self.conv3_2 = nn.Conv2d(32, 16, (3, 3))
+        self.pool3_2 = nn.MaxPool2d((2, 2))
+
 
         self.flatten1 = Flatten()
         self.flatten2 = Flatten()
-        self.linear1_1 = nn.Linear(1280, 256)
-        self.linear1_2 = nn.Linear(1280,256)
-        self.drop_out1 = nn.Dropout(0.4)
-        self.drop_out2 = nn.Dropout(0.4)
+        self.linear1_1 = nn.Linear(2560, 256)
+        self.linear1_2 = nn.Linear(2560,256)
+        self.drop_out1 = nn.Dropout(0.3)
+        self.drop_out2 = nn.Dropout(0.3)
         self.linear2_1 = nn.Linear(256, 128)
         self.linear2_2 = nn.Linear(256, 128)
         self.out1 = nn.Linear(128, 10)
