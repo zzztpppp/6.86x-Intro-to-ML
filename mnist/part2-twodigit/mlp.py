@@ -20,6 +20,7 @@ class MLP(nn.Module):
         self.flatten = Flatten()
 
         self.hidden = nn.Linear(input_dimension, 64)
+        self.hidden_2 = nn.Linear(input_dimension, 64)
         self.output1 = nn.Linear(64, 10)
         self.output2 = nn.Linear(64, 10)
 
@@ -27,10 +28,12 @@ class MLP(nn.Module):
     def forward(self, x):
         xf = self.flatten(x)
         hidden_out = self.hidden(xf)
+        hidden_out2 = self.hidden_2(xf)
         hidden_activation = F.relu(hidden_out)
+        hidden_activation_2 = F.relu(hidden_out2)
         output1 = self.output1(hidden_activation)
-        output2 = self.output2(hidden_activation)
-        out_first_digit, out_second_digit = F.softmax(output1), F.softmax(output2)
+        output2 = self.output2(hidden_activation_2)
+        out_first_digit, out_second_digit = output1, output2
 
         return out_first_digit, out_second_digit
 
