@@ -18,8 +18,54 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
         float: log-likelihood of the assignment
 
     """
-    raise NotImplementedError
 
+    def __multi_norm_pdf(x: np.ndarray, mus: np.ndarray, var: float) -> float:
+        """
+        Calculate density of a uncorrated multivariate normal distribution sharing the
+        same variance given its mean vector and covariance vector
+
+        Will remove 0s in x, for specific use of this function
+        """
+        x = x[x != 0]
+        mus = mus[x != 0]
+
+        pi = 3.14159265
+        d = len(x)
+        cov_matrix = np.identity(d) * var
+
+        diff = np.expand_dims(x - mus, 0) @ np.linalg.inv(cov_matrix) @ np.expand_dims(x - mus, 1)
+        return (1 / np.power(2 * pi, d / 2)) * (1 / np.sqrt(np.linalg.det(cov_matrix))) * (np.exp(-diff / 2)).item()
+
+    the_mus = mixture.mu
+    the_vars = mixture.var
+    the_ps = mixture.p
+
+    num_points, n_d = X.shape
+    num_k = the_mus[0]
+
+    # To avoid iteration, use matrix calculation
+    # for each point-cluster pairs
+    x_exp = np.tile(X, (num_k, 1))
+    mus_exp = np.repeat(the_mus, num_points, axis=0)
+    var_exp = the_vars.repeat(num_points)
+
+    # P(i | j)
+    x_mus_exp = np.hstack([x_exp, mus_exp, np.expand_dims(var_exp, axis=1)])
+    likelihood = np.apply_along_axis(lambda x: __multi_norm_pdf(x[:n_d], x[n_d:-1], x[-1]))\
+        .reshape((num_points,num_k), order='F')
+
+    # P(i, j)
+    joint_i_j = np.multiply(likelihood, np.expand_dims(the_ps, 0))
+
+    # P(i)
+    p_i = np.sum(joint_i_j, axis=1)
+
+    # Posterior P(j | i)
+    posterior = joint_i_j / np.expand_dims(p_i, 1)
+
+    # Log-likelihood
+    l_p = np.sum(np.log(p_i))
+    return posterior, l_p
 
 
 def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
