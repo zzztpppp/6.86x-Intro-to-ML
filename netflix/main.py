@@ -32,6 +32,21 @@ def test_naive_em():
     return max_para[0], max_para[1]
 
 
+def select_k_em():
+    """
+    Select the best K based on BIC
+
+    :return:
+    """
+    for k in [1, 2, 3, 4]:
+        para_list = []
+        for seed in [0, 1, 2, 3, 4]:
+            gm, post = common.init(X, k, seed)
+            mixture, p, cost = naive_em.run(X, gm, post)
+            para_list.append((mixture, p, cost))
+        max_para = max(para_list, key=lambda x: x[2])
+        print(common.bic(X, max_para[0], max_para[2]))
+
+
 if __name__ == "__main__":
-    mk, pk = test_kmeans()
-    m, p = test_naive_em()
+    select_k_em()
