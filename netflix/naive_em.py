@@ -18,14 +18,15 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
         float: log-likelihood of the assignment
     """
 
-    def __multi_norm_pdf(x: np.ndarray, mus: np.ndarray, vars: np.ndarray) -> float:
+    def __multi_norm_pdf(x: np.ndarray, mus: np.ndarray, var: float) -> float:
         """
-        Calculate density of a uncorrated multivariate normal distribution,
-        given its mean vector and covariance vector
+        Calculate density of a uncorrated multivariate normal distribution sharing the
+        same variance given its mean vector and covariance vector
         """
         pi = 3.14159265
         d = len(x)
-        cov_matrix = np.diag(vars)
+        cov_matrix = np.identity(d) * var
+
         diff = np.expand_dims(x - mus, 0) @ np.linalg.inv(cov_matrix) @ np.expand_dims(x - mus, 1)
         return (1 / np.power(2 * pi, d / 2)) * (1 / np.sqrt(np.linalg.det(cov_matrix))) * (np.exp(-diff / 2)).item()
 
@@ -36,12 +37,12 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
     # P(i| k)
     likelihood = []
     for k in range(len(the_ps)):
-        likelihood.append(np.apply_along_axis(lambda x: __multi_norm_pdf(x, the_mus[k, :], the_vars), 1, X))
+        likelihood.append(np.apply_along_axis(lambda x: __multi_norm_pdf(x, the_mus[k, :], the_vars[k]), 1, X))
 
     likelihood = np.array(likelihood).T
 
     # P(i, k)
-    p_i_k = np.multiply(likelihood, np.expand_dims(the_ps, 1))
+    p_i_k = np.multiply(likelihood, np.expand_dims(the_ps, 0))
 
     # P(i)
     p_i = np.sum(p_i_k, axis=1)
@@ -68,18 +69,35 @@ def mstep(X: np.ndarray, post: np.ndarray) -> GaussianMixture:
         GaussianMixture: the new gaussian mixture
     """
 
-    X_exp = np.tile(X, (post.shape[1], 1))
+    num_points = X.shape[0]
+    num_k = post.shape[1]
 
+    # Update expectation
     new_mus = []
-    for k in post.shape[1]:
+    for k in range(num_k):
         count = np.sum(np.multiply(X, np.expand_dims(post[:, k], 1)), axis=0)
         new_mus.append(count / np.sum(post[:, k]))
 
-
-
     new_mus = np.array(new_mus)
 
+    # Update variance
     new_vars = []
+    X_exp = np.tile(X, (num_k, 1))
+    new_mus_exp = np.repeat(new_mus, num_points, axis=0)
+    se = (X_exp - new_mus_exp)**2
+    post_flatten = post.reshape(num_points*num_k, order='F')
+    weighted_vars = np.multiply(se, np.expand_dims(post_flatten, 1))
+    for k in range(num_k):
+        weighted_sum_vars = np.sum(weighted_vars[k*num_points: k*num_points + num_points, :], axis=0)
+        new_vars.append(
+            weighted_sum_vars / np.sum(post_flatten[k*num_points: k*num_points + num_points])
+        )
+    new_vars = np.mean(new_vars, axis=1)
+
+    # Update prior
+    new_ps = np.mean(post, axis=0)
+
+    return GaussianMixture(new_mus, new_vars, new_ps)
 
 
 def run(X: np.ndarray, mixture: GaussianMixture,
@@ -97,4 +115,14 @@ def run(X: np.ndarray, mixture: GaussianMixture,
             for all components for all examples
         float: log-likelihood of the current assignment
     """
-    raise NotImplementedError
+
+    # Arbitrary initialization
+    lp = -np.nan
+    while True:
+        old_lp = lp
+        post, lp = estep(X, mixture)
+        mixture = mstep(X, post)
+        if lp - old_lp <= 10e-7 * np.abs(lp):
+            break
+    return mixture, post, lp
+
