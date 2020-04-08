@@ -9,4 +9,10 @@ K = 4
 n, d = X.shape
 seed = 0
 
-# TODO: Your code here
+def test_em():
+    init_mixture, post = common.init(X, K, seed)
+    em.run(X, init_mixture, post)
+
+
+if __name__ == "__main__":
+    test_em()
