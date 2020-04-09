@@ -9,9 +9,21 @@ K = 4
 n, d = X.shape
 seed = 0
 
+
 def test_em():
     init_mixture, post = common.init(X, K, seed)
-    em.run(X, init_mixture, post)
+    mixture, post, c = em.run(X, init_mixture, post)
+
+    print(em.fill_matrix(X, mixture))
+
+def test_incomplete_em():
+    for k_s in [1, 12]:
+        lps = []
+        for s in [0, 1, 2, 3, 4,5]:
+            init_mixture, post = common.init(X, k_s, s)
+            _, _, lp = em.run(X, init_mixture, post)
+            lps.append(lp)
+        print(max(lps))
 
 
 if __name__ == "__main__":

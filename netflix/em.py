@@ -19,7 +19,6 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
 
     """
 
-    import math
     def __multi_norm_pdf(x: np.ndarray, mus: np.ndarray, var: float) -> float:
         """
         Calculate density of a uncorrated multivariate normal distribution sharing the
@@ -27,15 +26,13 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
 
         Will remove 0s in x, for specific use of this function
         """
+        import math
+
         x_obs = x[x != 0]
         mus = mus[x != 0]
-
-        pi = math.pi
         d = len(x_obs)
-        cov_matrix = np.identity(d) * var
-
-        diff = np.expand_dims(x_obs - mus, 0) @ np.linalg.inv(cov_matrix) @ np.expand_dims(x_obs - mus, 1)
-        return (1 / np.power(2 * pi, d / 2)) * (1 / np.sqrt(np.linalg.det(cov_matrix))) * (np.exp(-diff / 2)).item()
+        log_prob = d*np.log(1/np.sqrt(var * 2 * math.pi)) - 1/2 * np.sum((x_obs - mus) ** 2) / var
+        return log_prob
 
     the_mus = mixture.mu
     the_vars = mixture.var
@@ -52,11 +49,11 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
 
     # P(i | j)
     x_mus_exp = np.hstack([x_exp, mus_exp, np.expand_dims(var_exp, axis=1)])
-    likelihood = np.apply_along_axis(lambda x: __multi_norm_pdf(x[:n_d], x[n_d:-1], x[-1]), 1, x_mus_exp)\
+    log_likelihood = np.apply_along_axis(lambda x: __multi_norm_pdf(x[:n_d], x[n_d:-1], x[-1]), 1, x_mus_exp)\
         .reshape((num_points,num_k), order='F')
 
     # log(P(i, j))
-    log_joint_i_j = np.log(likelihood) + np.log(np.expand_dims(the_ps + 1e-16, 0))
+    log_joint_i_j = log_likelihood + np.log(np.expand_dims(the_ps + 1e-16, 0))
 
     # P(i)
     p_i = np.sum(np.exp(log_joint_i_j), axis=1)
@@ -175,4 +172,17 @@ def fill_matrix(X: np.ndarray, mixture: GaussianMixture) -> np.ndarray:
     Returns
         np.ndarray: a (n, d) array with completed data
     """
-    raise NotImplementedError
+
+    # For every unobserved value, fill it with
+    # mean of p(j|u)*u_j
+
+    is_missing = X == 0
+    post, _ = estep(X, mixture)
+    the_mus = mixture.mu
+
+    weighted_mu = post @ the_mus
+    expected_matrix = weighted_mu / np.expand_dims(np.sum(post, 1), 1)
+
+    return expected_matrix * is_missing + X * (~is_missing)
+
+
