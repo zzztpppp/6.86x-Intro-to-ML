@@ -55,7 +55,7 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
         .reshape((num_points,num_k), order='F')
 
     # log(P(i, j))
-    log_joint_i_j = np.log(likelihood) + np.log(np.expand_dims(the_ps, 0))
+    log_joint_i_j = np.log(likelihood) + np.log(np.expand_dims(the_ps + 1e-16, 0))
 
     # P(i)
     p_i = np.sum(np.exp(log_joint_i_j), axis=1)
@@ -100,8 +100,12 @@ def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
     new_mus = np.array(new_mus)
 
     # Don't update the mus when its soft count < 1
-    soft_count_k = np.tile(np.expand_dims(np.sum(post, axis=0) < 1, 1), (1, num_d))
-    new_mus = old_mus * soft_count_k + new_mus * (~soft_count_k)
+    soft_count_k_d = []
+    for k in range(num_k):
+        soft_count_k = np.sum(~is_missing * np.expand_dims(post[:, k], 1), axis=0)
+        soft_count_k_d.append(soft_count_k)
+    soft_count_k_d = np.array(soft_count_k_d) < 1
+    new_mus = old_mus * soft_count_k_d + new_mus * (~soft_count_k_d)
 
     # Update variance
     new_vars = []
@@ -109,11 +113,11 @@ def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
     new_mus_exp = np.repeat(new_mus, num_points, axis=0)
     is_missing_exp = np.tile(is_missing, (num_k, 1))
     observed_length = np.sum(~is_missing_exp, axis=1)
+
     new_mus_exp[is_missing_exp] = 0
 
     se = (X_exp - new_mus_exp) ** 2
     post_flatten_exp = np.tile(np.expand_dims(post.reshape(num_points * num_k, order='F'), 1), (1, num_d))
-    post_flatten_exp[is_missing_exp] = 0
     weighted_vars = np.multiply(se, post_flatten_exp)
     for k in range(num_k):
         weighted_sum_vars = np.sum(weighted_vars[k * num_points: k * num_points + num_points, :])
