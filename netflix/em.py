@@ -19,6 +19,7 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
 
     """
 
+    import math
     def __multi_norm_pdf(x: np.ndarray, mus: np.ndarray, var: float) -> float:
         """
         Calculate density of a uncorrated multivariate normal distribution sharing the
@@ -29,7 +30,7 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
         x_obs = x[x != 0]
         mus = mus[x != 0]
 
-        pi = 3.14159265
+        pi = math.pi
         d = len(x_obs)
         cov_matrix = np.identity(d) * var
 
