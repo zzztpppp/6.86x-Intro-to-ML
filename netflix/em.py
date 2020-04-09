@@ -137,6 +137,7 @@ def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
 
     return GaussianMixture(new_mus, new_vars, new_ps)
 
+
 def run(X: np.ndarray, mixture: GaussianMixture,
         post: np.ndarray) -> Tuple[GaussianMixture, np.ndarray, float]:
     """Runs the mixture model
@@ -158,17 +159,6 @@ def run(X: np.ndarray, mixture: GaussianMixture,
         old_lp = lp
         post, lp = estep(X, mixture)
         mixture = mstep(X, post, mixture)
-        print(post)
-        print("mu is")
-        print(mixture.mu)
-        print("var is")
-        print(mixture.var)
-        print("p is")
-        print(mixture.p)
-        print('-ll')
-        print(lp)
-        print()
-
 
         if lp - old_lp <= 10e-7 * np.abs(lp):
             break
