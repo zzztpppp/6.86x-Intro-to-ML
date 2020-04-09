@@ -25,6 +25,8 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
         same variance given its mean vector and covariance vector
 
         Will remove 0s in x, for specific use of this function
+
+        ** Return the log-probability
         """
         import math
 
@@ -89,13 +91,8 @@ def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
     old_mus = mixture.mu
 
     # Update expectation
-    new_mus = []
-    for k in range(num_k):
-        post_k_d = np.tile(np.expand_dims(post[:, k], 1), (1, num_d))
-        post_k_d[is_missing] = 0
-        soft_count = np.sum(np.multiply(X, post_k_d), axis=0)
-        new_mus.append(soft_count / np.sum(post_k_d, axis=0))
-    new_mus = np.array(new_mus)
+    new_mus = post.T @ X
+    new_mus = new_mus / (post.T @(~is_missing))
 
     # Don't update the mus when its soft count < 1
     soft_count_k_d = []

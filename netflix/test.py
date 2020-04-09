@@ -16,6 +16,7 @@ def test_em():
 
     print(em.fill_matrix(X, mixture))
 
+
 def test_incomplete_em():
     for k_s in [1, 12]:
         lps = []
@@ -26,5 +27,15 @@ def test_incomplete_em():
         print(max(lps))
 
 
+def test_k12():
+    lls = []
+    for s in [0, 1, 2, 3, 4, 5]:
+        init_mixture, post = common.init(X, 12, s)
+        lls.append(em.run(X, init_mixture,post))
+    m, p, l = max(lls, key=lambda x: x[-1])
+    prediction = em.fill_matrix(X, m)
+    print(common.rmse(prediction, X_gold))
+
+
 if __name__ == "__main__":
-    test_em()
+    print(test_k12())
