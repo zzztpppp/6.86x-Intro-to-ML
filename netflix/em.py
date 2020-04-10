@@ -58,13 +58,13 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
     log_joint_i_j = log_likelihood + np.log(np.expand_dims(the_ps + 1e-16, 0))
 
     # P(i)
-    p_i = np.sum(np.exp(log_joint_i_j), axis=1)
+    log_sum_pi = logsumexp(log_joint_i_j, 1)
 
     # log Posterior P(j | i)
-    log_posterior = log_joint_i_j - np.expand_dims(logsumexp(log_joint_i_j, 1), 1)
+    log_posterior = log_joint_i_j - np.expand_dims(log_sum_pi, 1)
 
     # Log-likelihood
-    l_p = np.sum(np.log(p_i))
+    l_p = np.sum(log_sum_pi)
     return np.exp(log_posterior), l_p
 
 
@@ -90,17 +90,17 @@ def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
     num_d = X.shape[1]
     old_mus = mixture.mu
 
+    # Normalizer
+    soft_count_k_d = post.T @ (~is_missing)
+
     # Update expectation
     new_mus = post.T @ X
-    new_mus = new_mus / (post.T @(~is_missing))
+    log_new_mus = np.log(new_mus + 1e-16) - np.log(soft_count_k_d + 1e-16)
+    new_mus = np.exp(log_new_mus)
 
     # Don't update the mus when its soft count < 1
-    soft_count_k_d = []
-    for k in range(num_k):
-        soft_count_k = np.sum(~is_missing * np.expand_dims(post[:, k], 1), axis=0)
-        soft_count_k_d.append(soft_count_k)
-    soft_count_k_d = np.array(soft_count_k_d) < 1
-    new_mus = old_mus * soft_count_k_d + new_mus * (~soft_count_k_d)
+    not_update = soft_count_k_d < 1
+    new_mus = old_mus * not_update + new_mus * (~not_update)
 
     # Update variance
     new_vars = []
@@ -120,11 +120,12 @@ def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
             post_flatten_exp[k * num_points: k * num_points + num_points, 0] * observed_length[k * num_points: k * num_points + num_points],
         )
 
+        # For numerical stability, do division in log domain
         new_vars.append(
-            weighted_sum_vars / weights
+            np.log(weighted_sum_vars) - np.log(weights + 1e-16)
         )
 
-    new_vars = np.array(new_vars)
+    new_vars = np.exp(np.array(new_vars))
     new_vars[new_vars < min_variance] = min_variance
     # Update prior
     new_ps = np.mean(post, axis=0)
@@ -147,13 +148,12 @@ def run(X: np.ndarray, mixture: GaussianMixture,
             for all components for all examples
         float: log-likelihood of the current assignment
     """
+    post, lp = estep(X, mixture)
     # Arbitrary initialization
-    lp = -np.nan
     while True:
         old_lp = lp
-        post, lp = estep(X, mixture)
         mixture = mstep(X, post, mixture)
-
+        post, lp = estep(X, mixture)
         if lp - old_lp <= 10e-7 * np.abs(lp):
             break
     return mixture, post, lp
