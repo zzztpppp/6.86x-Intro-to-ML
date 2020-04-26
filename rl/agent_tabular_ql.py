@@ -60,9 +60,16 @@ def tabular_q_learning(q_func, current_state_1, current_state_2, action_index,
     Returns:
         None
     """
-    # TODO Your code here
+
+    # Previous q value
+    prev_q_vaule =  q_func[current_state_1, current_state_2, action_index,object_index]
+
+    # Best value in next state
+    v_next = max(q_func[next_state_1, next_state_2, :, :])
+
+    # Update q-value
     q_func[current_state_1, current_state_2, action_index,
-           object_index] = 0  # TODO Your update here
+           object_index] = 0  if terminal else (1 - ALPHA)*prev_q_vaule + ALPHA*(reward + v_next)
 
     return None  # This function shouldn't return anything
 
