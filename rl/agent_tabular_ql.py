@@ -74,9 +74,8 @@ def tabular_q_learning(q_func, current_state_1, current_state_2, action_index,
         q_func[current_state_1, current_state_2, action_index,
                object_index] = (1 - ALPHA)*prev_q_vaule + ALPHA*(reward + GAMMA*v_next)
     else:
-        if current_state_1 == next_state_1:
-            q_func[current_state_1, current_state_2, action_index,
-                   object_index] = (1 - ALPHA) * prev_q_vaule + ALPHA * (reward + GAMMA * v_next)
+        q_func[current_state_1, current_state_2, action_index,
+               object_index] = (1 - ALPHA) * prev_q_vaule + ALPHA * (reward + GAMMA * v_next)
 
     return None  # This function shouldn't return anything
 
