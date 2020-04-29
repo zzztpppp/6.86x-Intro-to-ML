@@ -73,8 +73,16 @@ def linear_q_learning(theta, current_state_vector, action_index, object_index,
         None
     """
     # TODO Your code here
-    q_value = theta @ current_state_vector
-    theta = None # TODO Your update here
+    current_q_value = theta @ current_state_vector
+    next_q_value = theta @ next_state_vector
+
+    # The true value corresponding to current states and next action
+    y = reward +(0 if terminal else GAMMA * np.max(next_q_value))
+
+    # Update parameters according to residuals'
+    gradient = current_state_vector * (y - current_q_value[tuple2index(action_index, object_index)])
+
+    theta[tuple2index(action_index, object_index), :] = theta[tuple2index(action_index, object_index), :] + ALPHA*gradient
 # pragma: coderesponse end
 
 
