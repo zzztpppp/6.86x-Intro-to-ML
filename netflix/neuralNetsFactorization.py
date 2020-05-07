@@ -23,16 +23,19 @@ class DMF(nn.Module):
     the ranking
     """
 
-    def __init__(self, num_users, num_movies, hidden_size=3, num_latent=1):
+    def __init__(self, num_users, num_movies, hidden_size=3, num_latent=3):
         super(DMF, self).__init__()
         self.user_encoder = nn.Linear(num_users, num_latent)
         self.movie_encoder = nn.Linear(num_movies, num_latent)
+        self.perceptron = nn.Linear(num_latent * 2, 1)
 
     def forward(self, u, v):
         user_latent = F.relu(self.user_encoder(u))
         movie_latent = F.relu(self.movie_encoder(v))
 
-        return (user_latent * movie_latent).sum(dim=1)
+        feature = torch.cat([user_latent, movie_latent], dim=1)
+        p1 = F.relu(self.perceptron(feature))
+        return p1
 
 def run_epoch(optimizer, model, ratings):
     """
