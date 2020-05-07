@@ -11,7 +11,7 @@ X = np.loadtxt("netflix_incomplete.txt")
 X_gold = np.loadtxt("netflix_complete.txt")
 
 
-NUM_EPOCH = 600
+NUM_EPOCH = 50
 BATCH_SIZE = 64
 LR = 0.1
 
@@ -87,7 +87,23 @@ def generate_n_one_hot(position, dim, n_duplicates):
     return torch.from_numpy(one_hot_dup)
 
 
+def test_run(model):
+    num_u, num_v = X_gold.shape
+    predictions = np.zeros((num_u, num_v), dtype='float')
+    for u in range(num_u):
+        # Retrieve predictions
+        with torch.no_grad:
+            input_user = generate_n_one_hot(u, num_u, num_v)
+            input_movie = torch.eye(num_v).float()
+            p = model(input_user,input_movie)
+        predictions[u, :] = p.squeeze().numpy()
+
+    print(predictions)
+    print(np.mean((predictions - X_gold)**2))
+
+
 
 if __name__ == "__main__":
-    train_run()
+    model = train_run()
+    test_run(model)
 
